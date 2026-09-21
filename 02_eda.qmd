@@ -1,0 +1,125 @@
+---
+title: "Untitled"
+format: html
+editor: visual
+---
+# Packages
+```{r}
+#| message: false
+library(readr)
+library(tidyverse)
+library(seastests)
+library(tsoutliers)
+library(tseries)
+library(corrplot)
+```
+
+# Data
+```{r}
+wd<-getwd()
+setwd(wd)
+
+can_data<-read_rds("can_data.rds")
+
+```
+
+
+
+# Diagnostics
+
+## Seasonality
+```{r}
+# Function
+check_seasonality<-function(data){
+  
+  seasonal_data<-c()
+  
+  # We collect numeric data names
+  num_columns<-names(data)[sapply(data,is.numeric)]
+  
+  # For each column of our data we apply this porcedure to test seasonality
+  for(col in num_columns){
+    
+    # We select a single vector
+    serie<-data[[col]]
+    
+    # We transform it into a time serie
+    ts_serie<-ts(serie,freq=12)
+    
+    #we apply the test
+    test_result<-combined_test(ts_serie)
+    
+    # Store the test result in a vector if there is seasonality
+    if(test_result$stat== TRUE){
+      seasonal_data<-c(seasonal_data,col)
+  } 
+  if (length(seasonal_data)==0){
+   message("No signs of seasonality detected ") 
+  }
+  else{
+    warning("Seasonality detected in:" )
+    print(seasonal_data)
+  }
+  
+    return(seasonal_data)
+  }
+}
+```
+
+```{r}
+check_seasonality(can_data)
+```
+
+
+## Stationarity
+
+```{r}
+check_stationarity<-function(data){
+  
+  unitroot_data<-c()
+  
+  # We collect numeric data names
+  num_columns<-names(data)[sapply(data,is.numeric)]
+  
+  # For each column of our data we apply this porcedure to test stationarity
+  for(col in num_columns){
+    
+    # We select a single vector
+    serie<-data[[col]]
+    
+    # We transform it into a time serie
+    ts_serie<-ts(serie,freq=12)
+    
+    #we apply the test
+    test_result<-adf.test(ts_serie)
+    
+    # Store the test result in a vector if there is seasonality
+    if(test_result$p.value>0.05){
+      unitroot_data<-c(unitroot_data,col)
+  } 
+  if (length(unitroot_data)==0){
+   message("No signs of unit root detected ") 
+  }
+  else{
+    warning("Unit root  detected in:" )
+    print(unitroot_data)
+  }
+  
+    return(unitroot_data)
+  }
+}
+```
+
+```{r}
+check_stationarity(can_data)
+```
+
+# Housing variable
+
+## Graph
+```{r}
+house<-ts(can_data$hstart_CAN_new,start=c(1981,1),frequency=12)
+
+plot.ts(house,col="red",main="Housing start in Canada ")
+```
+

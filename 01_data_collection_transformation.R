@@ -8,7 +8,7 @@ setwd(wd)
 # Load the master dataset
 
 data<-read_csv("balanced_can_md.csv")
-view(data)
+
 
 # collect the tcode and region level data : national,CAN
 
@@ -35,3 +35,15 @@ summary(data_filtered)
 
 # Missing values 
 colSums(is.na(data_filtered))
+
+# We got missing data on credits (total,houslod,mortgage,consumption,buisness) 
+# Discontinuted due to a change of policy between Bank of Canada and StatCan who aggred on a single credit statistics 
+# Now credits data are handled by StatCan
+
+# We then remove those datas
+
+can_data<-data_filtered |> 
+  select(-CRED_T_discontinued,-CRED_HOUS_discontinued,-CRED_MORT_discontinued,-CRED_CONS_discontinued,-CRE_BUS_discontinued)
+
+# Save the data we will work on
+saveRDS(can_data,"can_data.rds")
