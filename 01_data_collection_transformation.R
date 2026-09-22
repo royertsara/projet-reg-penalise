@@ -44,7 +44,7 @@ colSums(is.na(data_filtered))
 
 can_data<-data_filtered |> 
   select(-CRED_T_discontinued,-CRED_HOUS_discontinued,-CRED_MORT_discontinued,-CRED_CONS_discontinued,-CRE_BUS_discontinued) |> 
-  # We select a reasonable time-frame 1990-2026 M6 
+  # We select a reasonable time-frame 1990-2026 M6  
   filter(Date %within% interval("1990-01-01","2026-06-01") )
 
 # Save the data we will work on

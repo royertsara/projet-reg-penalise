@@ -3,7 +3,7 @@ title: "Untitled"
 format: html
 editor: visual
 ---
-# Packages
+#1. Packages
 ```{r}
 #| message: false
 library(readr)
@@ -12,9 +12,11 @@ library(seastests)
 library(tsoutliers)
 library(tseries)
 library(corrplot)
+library(fBasics)
+library(EnvStats)
 ```
 
-# Data
+# 2.Data
 ```{r}
 wd<-getwd()
 setwd(wd)
@@ -25,7 +27,13 @@ can_data<-read_rds("can_data.rds")
 
 
 
-# Diagnostics
+#3. Diagnostics
+
+## Data type
+```{r}
+str(can_data)
+```
+
 
 ## Seasonality
 ```{r}
@@ -114,12 +122,84 @@ check_stationarity<-function(data){
 check_stationarity(can_data)
 ```
 
-# Housing variable
+#4. Housing variable (Y)
 
 ## Graph
 ```{r}
-house<-ts(can_data$hstart_CAN_new,start=c(1981,1),frequency=12)
+house<-ts(can_data$hstart_CAN_new,start=c(1990,1),frequency=12)
 
-plot.ts(house,col="red",main="Housing start in Canada ")
+plot.ts(house,col="gray",main="Housing start monthly growth rate in Canada ")
+abline(h=mean(house,na.rm=TRUE),col="salmon",lty=2)
 ```
+
+#5. Exploratory data analysis
+
+## Outliers of Y
+
+```{r}
+outlier<-tso(house)
+plot(outlier)
+show(outlier)
+```
+**Comments:** There appears to be a negative outlier in April 1990, classified as a TC (temporary change), indicating an initial shock followed by a return to normal. Possible causes include the recessionary cycle affecting the country during this period, partly driven by rising interest rates aimed at containing inflation.
+
+### boxplot
+```{r}
+boxplot(house)
+```
+
+```{r}
+rosner_test<-rosnerTest(house,k=10)
+rosner_test$all.stats
+```
+
+**Comments:** Despite the potential outliers identified in the boxplot it looks like there are not statisicallly significant enough to be considered as such .
+
+## Descriptive statistics of Y
+```{r}
+basicStats(house)
+```
+
+
+## Variables correlation:
+
+### Correlation between housing and other variables
+
+```{r}
+thresold_cor <- 0.1
+
+cor_vec <- cor(can_data |> select(-c(Date)), use = "complete.obs",method=c("spearman"))[, "hstart_CAN_new"]
+
+cor_vec_filter <- cor_vec[abs(cor_vec) >= thresold_cor]
+
+pal <- colorRampPalette(c("blue", "white", "red"))
+cols <- pal(100)[as.numeric(cut(cor_vec_filter, breaks = 100))]
+
+par(mar = c(45, 12, 4, 2))
+
+barplot(cor_vec_filter,las=2,col = cols,
+        main = paste0("Explanatory variables with correlation ≥ ", thresold_cor, "with hstart_CAN_new"),
+        ylab = "Correlation", cex.names = 0.45,cex.main=0.9)
+
+```
+### Correlation between explanatory variables
+```{r}
+thresold <- 0.9
+
+cor_mat <- can_data |>
+  select(-c(Date,hstart_CAN_new)) |>
+  cor(use = "complete.obs",method=c("spearman"))
+diag(cor_mat) <- NA
+
+vars_strong_co <- apply(cor_mat, 1, function(x) any(abs(x) > thresold, na.rm = TRUE))
+cor_mat_filter <- cor_mat[vars_strong_co, vars_strong_co]
+
+corrplot(cor_mat_filter, method = "circle", type = "upper", diag = FALSE, tl.cex = 0.7)
+
+```
+
+
+
+
+
 
